@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Словообразование · ЕГЭ</title>
+<style>
+  :root{
+    --bg:#F5F6F8; --surface:#FFFFFF; --ink:#161A20; --muted:#6A727E; --line:#E7E9ED;
+    --primary:#4338CA; --primary-soft:#EEF0FF;
+    --ok:#0E8A5F; --ok-soft:#E6F5EE; --bad:#D63A3A; --bad-soft:#FBEBEB; --gold:#C0750F;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:var(--sans); background:var(--bg); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.45;
+    padding:18px 16px calc(28px + env(safe-area-inset-bottom));
+    min-height:100vh;
+  }
+  .app{ max-width:560px; margin:0 auto; }
+
+  /* top bar */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .brand{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+  .brand .t{ font-family:var(--mono); font-weight:600; font-size:13px; letter-spacing:.14em; color:var(--ink); text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tag{ font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.1em; color:var(--primary); background:var(--primary-soft); padding:3px 7px; border-radius:6px; }
+  .topbtns{ display:flex; gap:6px; flex:none; }
+  .iconbtn{ font-family:var(--sans); font-size:13px; color:var(--muted); background:transparent; border:1px solid var(--line); border-radius:9px; padding:6px 10px; cursor:pointer; transition:.15s; }
+  .iconbtn:hover{ color:var(--ink); border-color:#cfd3da; }
+
+  /* progress */
+  .progwrap{ margin-bottom:14px; }
+  .progtop{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:7px; }
+  .progtop .lbl{ font-size:12.5px; color:var(--muted); }
+  .progtop .lbl b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+  .track{ height:7px; background:#E9EBEF; border-radius:99px; overflow:hidden; }
+  .fill{ height:100%; width:0%; background:linear-gradient(90deg,#5B50E6,var(--primary)); border-radius:99px; transition:width .4s cubic-bezier(.4,0,.2,1); }
+
+  /* stats */
+  .stats{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .pill{ flex:1 1 0; min-width:74px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:9px 10px; text-align:center; }
+  .pill .v{ font-family:var(--mono); font-weight:700; font-size:18px; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .pill .k{ font-size:10.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:3px; }
+  .v.ok{ color:var(--ok); } .v.bad{ color:var(--bad); } .v.gold{ color:var(--gold); }
+
+  /* card */
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:30px 22px 26px; box-shadow:0 1px 2px rgba(20,24,32,.04), 0 14px 30px -22px rgba(20,24,32,.18); }
+  .eyebrow{ text-align:center; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+  .root{ text-align:center; font-family:var(--mono); font-weight:700; font-size:clamp(30px,9vw,46px); letter-spacing:.1em; line-height:1; color:var(--ink); word-break:break-word; }
+  .root-tr{ text-align:center; font-family:var(--sans); font-size:14px; color:var(--muted); margin-top:8px; line-height:1.3; }
+  .root-tr:empty{ display:none; }
+  .arrow{ text-align:center; color:#C4C9D1; font-size:22px; margin:14px 0 12px; line-height:1; }
+
+  .maskrow{ display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .mask{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .slot{ font-family:var(--mono); font-weight:700; font-size:clamp(20px,6.5vw,30px); width:.84em; text-align:center; color:var(--ink); }
+  .slot.dot{ color:#C7CCD4; }
+  .slot.ok{ color:var(--ok); }
+  .lenbadge{ font-family:var(--mono); font-size:12px; color:var(--muted); background:#F0F1F4; border-radius:7px; padding:3px 7px; align-self:center; }
+  .mask-tr{ text-align:center; font-family:var(--sans); font-size:16px; font-weight:600; color:var(--ink); margin:0 0 20px; line-height:1.35; }
+  .mask-tr:empty{ display:none; }
+  .mask-tr::before{ content:"значение"; display:block; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:5px; }
+  .mask.resolved .slot{ animation:pop .26s ease both; animation-delay:calc(var(--i,0) * 28ms); }
+  @keyframes pop{ from{opacity:0; transform:translateY(4px) scale(.92);} to{opacity:1; transform:none;} }
+
+  /* input + actions */
+  .field{ position:relative; margin-bottom:12px; }
+  #answer{
+    width:100%; font-family:var(--mono); font-weight:700; font-size:22px; letter-spacing:.06em;
+    text-align:center; text-transform:uppercase; color:var(--ink);
+    padding:15px 14px; border:2px solid var(--line); border-radius:13px; background:#FCFCFD; outline:none; transition:.15s;
+  }
+  #answer::placeholder{ color:#C2C7CF; letter-spacing:.02em; font-weight:600; text-transform:none; }
+  #answer:focus{ border-color:var(--primary); background:#fff; box-shadow:0 0 0 4px var(--primary-soft); }
+  #answer.ok{ border-color:var(--ok); background:var(--ok-soft); box-shadow:none; }
+  #answer.bad{ border-color:var(--bad); background:var(--bad-soft); box-shadow:none; }
+  #answer:disabled{ opacity:1; }
+  .shake{ animation:shake .4s; }
+  @keyframes shake{ 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(3px)} 30%,50%,70%{transform:translateX(-5px)} 40%,60%{transform:translateX(5px)} }
+
+  .actions{ display:flex; gap:10px; }
+  .btn{ font-family:var(--sans); font-size:16px; font-weight:600; border-radius:13px; padding:14px 16px; cursor:pointer; border:1px solid transparent; transition:.15s; }
+  .btn.primary{ flex:1; background:var(--primary); color:#fff; }
+  .btn.primary:hover{ background:#3A30B5; }
+  .btn.primary:active{ transform:translateY(1px); }
+  .btn.ghost{ background:transparent; color:var(--muted); border-color:var(--line); }
+  .btn.ghost:hover{ color:var(--ink); border-color:#cfd3da; }
+  .btn.ghost.hidden{ display:none; }
+
+  /* feedback */
+  .feedback{ min-height:22px; margin-top:16px; text-align:center; font-size:15px; display:flex; align-items:center; justify-content:center; gap:9px; flex-wrap:wrap; }
+  .feedback.ok{ color:var(--ok); font-weight:600; }
+  .feedback.bad{ color:var(--bad); }
+  .feedback.note{ color:var(--gold); }
+  .feedback b{ color:var(--ink); font-family:var(--mono); letter-spacing:.04em; }
+  .feedback s{ color:var(--bad); opacity:.8; font-family:var(--mono); }
+  .feedback .sub{ color:var(--muted); font-weight:400; font-size:13px; }
+  .speak{ background:transparent; border:1px solid var(--line); border-radius:8px; padding:3px 8px; cursor:pointer; font-size:14px; line-height:1; color:var(--muted); }
+  .speak:hover{ color:var(--ink); border-color:#cfd3da; }
+  .hint{ text-align:center; color:#9AA1AB; font-size:12px; margin-top:14px; }
+
+  /* summary */
+  .summary{ background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:30px 24px; text-align:center; box-shadow:0 14px 30px -22px rgba(20,24,32,.2); }
+  .summary h2{ margin:0 0 4px; font-size:24px; font-weight:700; letter-spacing:-.01em; }
+  .summary .lead{ color:var(--muted); margin:0 0 22px; font-size:14.5px; }
+  .sumgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:24px; }
+  .sumcell{ background:#FAFBFC; border:1px solid var(--line); border-radius:13px; padding:14px; }
+  .sumcell .v{ font-family:var(--mono); font-weight:700; font-size:24px; font-variant-numeric:tabular-nums; }
+  .sumcell .k{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .sumbtns{ display:flex; flex-direction:column; gap:10px; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="t">Словообразование</span>
+      <span class="tag">ЕГЭ</span>
+    </div>
+    <div class="topbtns">
+      <button class="iconbtn" id="resultsBtn" title="Показать итоги">Итоги</button>
+      <button class="iconbtn" id="resetBtn" title="Начать заново">↻</button>
+    </div>
+  </div>
+
+  <section id="practice">
+    <div class="progwrap">
+      <div class="progtop">
+        <span class="lbl">освоено <b id="doneCount">0</b> / <b id="totalCount">0</b></span>
+        <span class="lbl"><b id="pctLabel">0%</b></span>
+      </div>
+      <div class="track"><div class="fill" id="bar"></div></div>
+    </div>
+
+    <div class="stats">
+      <div class="pill"><div class="v ok" id="stCorrect">0</div><div class="k">верно</div></div>
+      <div class="pill"><div class="v bad" id="stWrong">0</div><div class="k">ошибок</div></div>
+      <div class="pill"><div class="v gold" id="stStreak">0</div><div class="k">серия</div></div>
+      <div class="pill"><div class="v" id="stAcc">—</div><div class="k">точность</div></div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">образуйте слово от</div>
+      <div class="root" id="root">—</div>
+      <div class="root-tr" id="rootTr"></div>
+      <div class="arrow">↓</div>
+      <div class="maskrow">
+        <div class="mask" id="mask"></div>
+        <span class="lenbadge" id="lenbadge"></span>
+      </div>
+      <div class="mask-tr" id="maskTr"></div>
+
+      <div class="field">
+        <input id="answer" type="text" inputmode="text" autocomplete="off"
+               autocorrect="off" autocapitalize="characters" spellcheck="false"
+               placeholder="введите слово" aria-label="Ваш ответ">
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="checkBtn">Проверить</button>
+        <button class="btn ghost" id="dunnoBtn">Не знаю</button>
+      </div>
+
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      <div class="hint" id="hint">Enter — проверить</div>
+    </div>
+  </section>
+
+  <section id="summary" class="summary hidden">
+    <h2 id="sumTitle">Итоги</h2>
+    <p class="lead" id="sumLead"></p>
+    <div class="sumgrid">
+      <div class="sumcell"><div class="v" id="sumDone">0</div><div class="k">освоено</div></div>
+      <div class="sumcell"><div class="v" id="sumAcc">—</div><div class="k">точность</div></div>
+      <div class="sumcell"><div class="v" id="sumBest">0</div><div class="k">лучшая серия</div></div>
+      <div class="sumcell"><div class="v" id="sumTime">0:00</div><div class="k">время</div></div>
+    </div>
+    <div class="sumbtns">
+      <button class="btn primary" id="contBtn">Продолжить</button>
+      <button class="btn ghost" id="reviewBtn">Повторить ошибки</button>
+      <button class="btn ghost" id="restartBtn">Начать заново (все <span id="restartCount">0</span>)</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const RAW_ITEMS = [{"b":"ABLE","bt":"способный","a":"ABILITY","at":"способность"},{"b":"ABLE","bt":"способный","a":"INABILITY","at":"неспособность"},{"b":"ABLE","bt":"способный","a":"UNABLE","at":"неспособный, не в состоянии"},{"b":"ACCEPT","bt":"принимать","a":"ACCEPTABLE","at":"приемлемый"},{"b":"ACCIDENTAL","bt":"случайный","a":"ACCIDENTALLY","at":"случайно"},{"b":"ACCOMMODATE","bt":"размещать","a":"ACCOMMODATION","at":"жильё, размещение"},{"b":"ACCOMPLISH","bt":"достигать, выполнять","a":"ACCOMPLISHMENT","at":"достижение"},{"b":"ACCURATE","bt":"точный","a":"INACCURATE","at":"неточный"},{"b":"ACHIEVE","bt":"достигать","a":"ACHIEVEMENT","at":"достижение"},{"b":"ACT","bt":"действовать; акт","a":"ACTOR","at":"актёр"},{"b":"ACTIVE","bt":"активный","a":"ACTIVELY","at":"активно"},{"b":"ACTIVE","bt":"активный","a":"ACTIVIST","at":"активист"},{"b":"ACTIVE","bt":"активный","a":"ACTIVITY","at":"активность, деятельность"},{"b":"ACTIVE","bt":"активный","a":"INACTIVE","at":"неактивный, бездействующий"},{"b":"ACTIVE","bt":"активный","a":"INTERACTIVE","at":"интерактивный"},{"b":"ADD","bt":"добавлять","a":"ADDITION","at":"добавление, сложение"},{"b":"ADVENTURE","bt":"приключение","a":"ADVENTUROUS","at":"любящий приключения, рискованный"},{"b":"ADVERT","bt":"реклама","a":"ADVERTISE","at":"рекламировать","x":["ADVERTIZE"]},{"b":"ADVISE","bt":"советовать","a":"ADVICE","at":"совет"},{"b":"AGENCY","bt":"агентство","a":"AGENT","at":"агент"},{"b":"AGGRESSION","bt":"агрессия","a":"AGGRESSIVE","at":"агрессивный"},{"b":"AGREE","bt":"соглашаться","a":"DISAGREE","at":"не соглашаться"},{"b":"AGRICULTURE","bt":"сельское хозяйство","a":"AGRICULTURAL","at":"сельскохозяйственный"},{"b":"ALLOW","bt":"позволять","a":"ALLOWABLE","at":"допустимый"},{"b":"ALLOW","bt":"позволять","a":"ALLOWANCE","at":"пособие, норма"},{"b":"ALLOW","bt":"позволять","a":"DISALLOW","at":"запрещать, не разрешать"},{"b":"ALTERNATIVE","bt":"альтернатива; альтернативный","a":"ALTERNATIVELY","at":"в качестве альтернативы"},{"b":"AMAZE","bt":"изумлять","a":"AMAZEMENT","at":"изумление"},{"b":"AMAZE","bt":"изумлять","a":"AMAZING","at":"удивительный"},{"b":"AMBITION","bt":"амбиция, стремление","a":"AMBITIOUS","at":"амбициозный"},{"b":"ANNOUNCE","bt":"объявлять","a":"ANNOUNCEMENT","at":"объявление"},{"b":"ANNOY","bt":"раздражать","a":"ANNOYANCE","at":"раздражение, досада"},{"b":"ANXIETY","bt":"тревога","a":"ANXIOUS","at":"тревожный, обеспокоенный"},{"b":"ANXIETY","bt":"тревога","a":"ANXIOUSLY","at":"тревожно"},{"b":"APOLOGISE","bt":"извиняться","a":"APOLOGY","at":"извинение"},{"b":"APOLOGY","bt":"извинение","a":"APOLOGISE","at":"извиняться","x":["APOLOGIZE"]},{"b":"APOLOGY","bt":"извинение","a":"APOLOGIZE","at":"извиняться","x":["APOLOGISE"]},{"b":"APPARENT","bt":"очевидный, видимый","a":"APPARENTLY","at":"очевидно, по-видимому"},{"b":"APPEAR","bt":"появляться; казаться","a":"APPEARANCE","at":"внешность; появление"},{"b":"APPEAR","bt":"появляться; казаться","a":"DISAPPEAR","at":"исчезать"},{"b":"APPEAR","bt":"появляться; казаться","a":"REAPPEAR","at":"вновь появляться"},{"b":"APPETITE","bt":"аппетит","a":"APPETIZING","at":"аппетитный","x":["APPETISING"]},{"b":"APPLY","bt":"подавать заявление; применять","a":"APPLICANT","at":"кандидат, заявитель","x":["APPLICANTS"]},{"b":"APPLY","bt":"подавать заявление; применять","a":"APPLICATION","at":"заявление; применение"},{"b":"APPOINT","bt":"назначать","a":"APPOINTMENT","at":"назначение; приём, встреча"},{"b":"APPOINT","bt":"назначать","a":"DISAPPOINT","at":"разочаровывать"},{"b":"APPOINT","bt":"назначать","a":"DISAPPOINTMENT","at":"разочарование"},{"b":"APPRECIATE","bt":"ценить; быть благодарным","a":"APPRECIATION","at":"признательность; оценка"},{"b":"APPRECIATE","bt":"ценить; быть благодарным","a":"APPRECIATIVE","at":"благодарный, признательный"},{"b":"APPRECIATE","bt":"ценить; быть благодарным","a":"APPRECIATIVELY","at":"с благодарностью"},{"b":"APPRECIATE","bt":"ценить; быть благодарным","a":"UNAPPRECIATIVE","at":"неблагодарный"},{"b":"APPRENTICE","bt":"ученик, подмастерье","a":"APPRENTICESHIP","at":"ученичество, стажировка"},{"b":"APPROVE","bt":"одобрять","a":"APPROVAL","at":"одобрение"},{"b":"APPROVE","bt":"одобрять","a":"DISAPPROVAL","at":"неодобрение"},{"b":"ARCHEOLOGY","bt":"археология","a":"ARCHEOLOGICAL","at":"археологический"},{"b":"ARCHEOLOGY","bt":"археология","a":"ARCHEOLOGIST","at":"археолог"},{"b":"ARGUE","bt":"спорить; утверждать","a":"ARGUMENT","at":"спор; аргумент","x":["ARGUMENTS"]},{"b":"ARGUE","bt":"спорить; утверждать","a":"ARGUMENTATIVE","at":"любящий спорить"},{"b":"ARRANGE","bt":"организовывать, устраивать","a":"ARRANGEMENT","at":"договорённость; расположение","x":["ARRANGEMENTS"]},{"b":"ARRANGE","bt":"организовывать, устраивать","a":"REARRANGE","at":"переставлять, переустраивать"},{"b":"ARRIVE","bt":"прибывать","a":"ARRIVAL","at":"прибытие"},{"b":"ART","bt":"искусство","a":"ARTIST","at":"художник, артист"},{"b":"ARTIST","bt":"художник, артист","a":"ARTISTIC","at":"художественный, артистичный"},{"b":"ASSIST","bt":"помогать","a":"ASSISTANT","at":"помощник, ассистент"},{"b":"ASSOCIATE","bt":"связывать, ассоциировать","a":"ASSOCIATED","at":"связанный"},{"b":"ASSOCIATE","bt":"связывать, ассоциировать","a":"ASSOCIATION","at":"ассоциация, объединение"},{"b":"ASSOCIATE","bt":"связывать, ассоциировать","a":"DISASSOCIATE","at":"отделять, разъединять"},{"b":"ASSOCIATE","bt":"связывать, ассоциировать","a":"UNASSOCIATED","at":"не связанный"},{"b":"ASTRONOMY","bt":"астрономия","a":"ASTRONOMER","at":"астроном","x":["ASTRONOMERS"]},{"b":"ATTEND","bt":"посещать","a":"ATTENDANT","at":"служитель, сопровождающий"},{"b":"ATTEND","bt":"посещать","a":"ATTENDING","at":"присутствующий"},{"b":"ATTRACT","bt":"привлекать","a":"ATTRACTION","at":"привлекательность; достопримечательность","x":["ATTRACTIONS"]},{"b":"ATTRACT","bt":"привлекать","a":"ATTRACTIVE","at":"привлекательный"},{"b":"AWARE","bt":"осведомлённый, осознающий","a":"AWARENESS","at":"осведомлённость, осознание"},{"b":"AWARE","bt":"осведомлённый, осознающий","a":"UNAWARE","at":"не подозревающий, не осознающий"},{"b":"BABYSIT","bt":"сидеть с ребёнком","a":"BABYSITTER","at":"няня"},{"b":"BASIC","bt":"базовый, основной","a":"BASICALLY","at":"в основном, по сути"},{"b":"BEAUTY","bt":"красота","a":"BEAUTIFUL","at":"красивый"},{"b":"BEGIN","bt":"начинать","a":"BEGINNING","at":"начало"},{"b":"BEHAVE","bt":"вести себя","a":"MISBEHAVE","at":"плохо себя вести"},{"b":"BELIEVE","bt":"верить","a":"UNBELIEVABLE","at":"невероятный"},{"b":"BENEFIT","bt":"польза, выгода","a":"BENEFICIAL","at":"полезный, благотворный"},{"b":"BOTANY","bt":"ботаника","a":"BOTANIST","at":"ботаник"},{"b":"BRIGHT","bt":"яркий; умный","a":"BRIGHTEN","at":"делать ярче, оживлять"},{"b":"BRIGHT","bt":"яркий; умный","a":"BRIGHTLY","at":"ярко"},{"b":"BROAD","bt":"широкий","a":"BROADEN","at":"расширять"},{"b":"BUILD","bt":"строить","a":"BUILDER","at":"строитель","x":["BUILDERS"]},{"b":"BUILD","bt":"строить","a":"BUILDING","at":"здание; строительство"},{"b":"BUSY","bt":"занятой","a":"BUSINESS","at":"бизнес, дело"},{"b":"CALCULATE","bt":"вычислять","a":"CALCULATION","at":"вычисление, расчёт"},{"b":"CALCULATE","bt":"вычислять","a":"CALCULATOR","at":"калькулятор"},{"b":"CAMP","bt":"лагерь; разбивать лагерь","a":"CAMPER","at":"турист, отдыхающий в лагере","x":["CAMPERS"]},{"b":"CAMP","bt":"лагерь; разбивать лагерь","a":"CAMPING","at":"кемпинг, поход с палаткой"},{"b":"CARE","bt":"забота; заботиться","a":"CAREFUL","at":"осторожный, внимательный"},{"b":"CARE","bt":"забота; заботиться","a":"CAREFULLY","at":"осторожно, внимательно"},{"b":"CARE","bt":"забота; заботиться","a":"CARELESS","at":"беспечный, небрежный"},{"b":"CARE","bt":"забота; заботиться","a":"CARELESSLY","at":"небрежно"},{"b":"CARE","bt":"забота; заботиться","a":"CARING","at":"заботливый"},{"b":"CARE","bt":"забота; заботиться","a":"UNCARING","at":"равнодушный, безразличный"},{"b":"CERTAIN","bt":"уверенный; определённый","a":"CERTAINLY","at":"конечно, несомненно"},{"b":"CHAMPION","bt":"чемпион","a":"CHAMPIONSHIP","at":"чемпионат"},{"b":"CHEMISTRY","bt":"химия","a":"CHEMICAL","at":"химический; химикат"},{"b":"CITY","bt":"город","a":"CITIZEN","at":"гражданин"},{"b":"CITY","bt":"город","a":"CITIZENSHIP","at":"гражданство"},{"b":"CLEAN","bt":"чистый; чистить","a":"CLEANER","at":"уборщик; чистящее средство"},{"b":"CLIMB","bt":"взбираться, лезть","a":"CLIMBER","at":"альпинист, скалолаз"},{"b":"CLIMB","bt":"взбираться, лезть","a":"CLIMBING","at":"скалолазание, восхождение"},{"b":"COLLECT","bt":"собирать","a":"COLLECTION","at":"коллекция; сбор","x":["COLLECTIONS"]},{"b":"COLLECT","bt":"собирать","a":"COLLECTOR","at":"коллекционер"},{"b":"COLONY","bt":"колония","a":"COLONISE","at":"колонизировать","x":["COLONIZE"]},{"b":"COLONY","bt":"колония","a":"COLONIZE","at":"колонизировать","x":["COLONISE"]},{"b":"COLOSSUS","bt":"колосс, гигант","a":"COLOSSAL","at":"колоссальный, огромный"},{"b":"COLOUR","bt":"цвет; раскрашивать","a":"COLOURFUL","at":"красочный, яркий"},{"b":"COMBINE","bt":"объединять, сочетать","a":"COMBINATION","at":"комбинация, сочетание","x":["COMBINATIONS"]},{"b":"COMFORT","bt":"комфорт; утешать","a":"COMFORTABLE","at":"удобный, комфортный"},{"b":"COMFORT","bt":"комфорт; утешать","a":"UNCOMFORTABLE","at":"неудобный, неуютный"},{"b":"COMMAND","bt":"команда, приказ; командовать","a":"COMMANDER","at":"командир"},{"b":"COMMERCE","bt":"торговля, коммерция","a":"COMMERCIAL","at":"коммерческий; реклама"},{"b":"COMMON","bt":"общий; распространённый","a":"UNCOMMON","at":"необычный, редкий"},{"b":"COMMUNICATE","bt":"общаться, передавать","a":"COMMUNICATION","at":"общение, коммуникация"},{"b":"COMMUNICATE","bt":"общаться, передавать","a":"COMMUNICATIVE","at":"общительный, коммуникабельный"},{"b":"COMPANION","bt":"спутник, компаньон","a":"COMPANIONSHIP","at":"дружеское общество, товарищество"},{"b":"COMPARE","bt":"сравнивать","a":"COMPARABLE","at":"сравнимый, сопоставимый"},{"b":"COMPARE","bt":"сравнивать","a":"COMPARATIVE","at":"сравнительный"},{"b":"COMPARE","bt":"сравнивать","a":"COMPARATIVELY","at":"сравнительно"},{"b":"COMPATIBLE","bt":"совместимый","a":"COMPATIBILITY","at":"совместимость"},{"b":"COMPETE","bt":"соревноваться, конкурировать","a":"COMPETITION","at":"соревнование, конкуренция"},{"b":"COMPETE","bt":"соревноваться, конкурировать","a":"COMPETITIVE","at":"конкурентоспособный; соревновательный"},{"b":"COMPETE","bt":"соревноваться, конкурировать","a":"COMPETITIVELY","at":"на конкурентной основе"},{"b":"COMPETE","bt":"соревноваться, конкурировать","a":"COMPETITOR","at":"соперник, конкурент"},{"b":"COMPOSE","bt":"сочинять, составлять","a":"COMPOSER","at":"композитор"},{"b":"CONFESS","bt":"признаваться","a":"CONFESSION","at":"признание, исповедь"},{"b":"CONFIRM","bt":"подтверждать","a":"CONFIRMATION","at":"подтверждение"},{"b":"CONNECT","bt":"соединять, связывать","a":"CONNECTIVE","at":"связующий, соединительный"},{"b":"CONNECT","bt":"соединять, связывать","a":"CONNECTIVITY","at":"связность, подключение"},{"b":"CONNECT","bt":"соединять, связывать","a":"DISCONNECT","at":"отключать, разъединять"},{"b":"CONNECT","bt":"соединять, связывать","a":"RECONNECT","at":"вновь соединять"},{"b":"CONSERVE","bt":"сохранять, беречь","a":"CONSERVATION","at":"сохранение, охрана природы"},{"b":"CONSERVE","bt":"сохранять, беречь","a":"CONSERVATIVE","at":"консервативный; консерватор"},{"b":"CONSTANT","bt":"постоянный","a":"CONSTANTLY","at":"постоянно"},{"b":"CONSTRUCT","bt":"строить, создавать","a":"CONSTRUCTION","at":"строительство, конструкция"},{"b":"CONSTRUCT","bt":"строить, создавать","a":"RECONSTRUCT","at":"восстанавливать, реконструировать"},{"b":"CONSUME","bt":"потреблять","a":"CONSUMER","at":"потребитель","x":["CONSUMERS"]},{"b":"CONTAIN","bt":"содержать","a":"CONTAINER","at":"контейнер, ёмкость"},{"b":"CONTAIN","bt":"содержать","a":"CONTENTS","at":"содержание, содержимое"},{"b":"CONTINUE","bt":"продолжать","a":"CONTINUOUSLY","at":"непрерывно"},{"b":"CONTRIBUTE","bt":"вносить вклад","a":"CONTRIBUTION","at":"вклад"},{"b":"CONVENIENT","bt":"удобный","a":"CONVENIENCE","at":"удобство"},{"b":"CONVENIENT","bt":"удобный","a":"CONVENIENTLY","at":"удобно"},{"b":"CONVENIENT","bt":"удобный","a":"INCONVENIENCE","at":"неудобство"},{"b":"CONVENIENT","bt":"удобный","a":"INCONVENIENT","at":"неудобный"},{"b":"CONVENIENT","bt":"удобный","a":"INCONVENIENTLY","at":"неудобно"},{"b":"CONVENTIONAL","bt":"традиционный, обычный","a":"UNCONVENTIONAL","at":"нетрадиционный"},{"b":"COOL","bt":"прохладный; крутой","a":"COOLER","at":"кулер, холодильник; прохладнее"},{"b":"CORRECT","bt":"правильный; исправлять","a":"CORRECTLY","at":"правильно"},{"b":"CORRECT","bt":"правильный; исправлять","a":"INCORRECT","at":"неправильный"},{"b":"CORRECT","bt":"правильный; исправлять","a":"INCORRECTLY","at":"неправильно"},{"b":"CORRESPOND","bt":"соответствовать; переписываться","a":"CORRESPONDENCE","at":"переписка; соответствие"},{"b":"COUNSEL","bt":"советовать; совет","a":"COUNSELOR","at":"советник, консультант"},{"b":"COUNT","bt":"считать","a":"COUNTLESS","at":"бесчисленный"},{"b":"COURAGE","bt":"смелость, мужество","a":"DISCOURAGE","at":"обескураживать, отбивать желание"},{"b":"COURAGE","bt":"смелость, мужество","a":"ENCOURAGE","at":"поощрять, ободрять"},{"b":"COVER","bt":"покрывать; обложка","a":"COVERAGE","at":"освещение; охват"},{"b":"COVER","bt":"покрывать; обложка","a":"DISCOVER","at":"открывать, обнаруживать"},{"b":"CREATE","bt":"создавать","a":"CREATION","at":"создание, творение","x":["CREATIONS"]},{"b":"CREATE","bt":"создавать","a":"CREATIVELY","at":"творчески"},{"b":"CREATE","bt":"создавать","a":"CREATIVITY","at":"творчество, креативность"},{"b":"CREATE","bt":"создавать","a":"CREATOR","at":"создатель, творец","x":["CREATORS"]},{"b":"CRUEL","bt":"жестокий","a":"CRUELTY","at":"жестокость"},{"b":"CULTURE","bt":"культура","a":"CULTURAL","at":"культурный"},{"b":"DARK","bt":"тёмный","a":"DARKEN","at":"темнеть, затемнять"},{"b":"DARK","bt":"тёмный","a":"DARKNESS","at":"темнота"},{"b":"DAY","bt":"день","a":"DAILY","at":"ежедневный; ежедневно"},{"b":"DEAD","bt":"мёртвый","a":"DEATH","at":"смерть"},{"b":"DECIDE","bt":"решать","a":"DECISION","at":"решение","x":["DECISIONS"]},{"b":"DECORATE","bt":"украшать, декорировать","a":"DECORATION","at":"украшение, декорация"},{"b":"DECORATE","bt":"украшать, декорировать","a":"DECORATIVE","at":"декоративный"},{"b":"DECORATE","bt":"украшать, декорировать","a":"DECORATOR","at":"декоратор"},{"b":"DEDICATE","bt":"посвящать","a":"DEDICATION","at":"посвящение; преданность"},{"b":"DEEP","bt":"глубокий","a":"DEPTH","at":"глубина"},{"b":"DEFENSE","bt":"защита, оборона","a":"DEFENSELESS","at":"беззащитный"},{"b":"DEFINE","bt":"определять","a":"DEFINITION","at":"определение"},{"b":"DEFINITE","bt":"определённый, чёткий","a":"DEFINITELY","at":"определённо, точно"},{"b":"DEPART","bt":"отправляться, уезжать","a":"DEPARTURE","at":"отъезд, отправление"},{"b":"DESCRIBE","bt":"описывать","a":"DESCRIPTION","at":"описание"},{"b":"DESTROY","bt":"разрушать, уничтожать","a":"DESTRUCTION","at":"разрушение, уничтожение"},{"b":"DETERMINE","bt":"определять; решаться","a":"DETERMINATION","at":"решимость; определение"},{"b":"DEVELOP","bt":"развивать, разрабатывать","a":"DEVELOPMENT","at":"развитие, разработка","x":["DEVELOPMENTS"]},{"b":"DIAL","bt":"набирать номер; циферблат","a":"REDIAL","at":"перезванивать, набирать повторно"},{"b":"DIET","bt":"диета, питание","a":"DIETITIAN","at":"диетолог"},{"b":"DIFFER","bt":"отличаться","a":"DIFFERENCE","at":"различие, разница"},{"b":"DIFFER","bt":"отличаться","a":"DIFFERENT","at":"разный, отличающийся"},{"b":"DIFFER","bt":"отличаться","a":"DIFFERENTLY","at":"по-разному"},{"b":"DIFFICULT","bt":"трудный","a":"DIFFICULTY","at":"трудность"},{"b":"DIRECT","bt":"прямой; направлять","a":"DIRECTION","at":"направление"},{"b":"DIRECT","bt":"прямой; направлять","a":"DIRECTLY","at":"прямо, непосредственно"},{"b":"DIRECT","bt":"прямой; направлять","a":"DIRECTOR","at":"директор; режиссёр"},{"b":"DIRECT","bt":"прямой; направлять","a":"INDIRECT","at":"непрямой, косвенный"},{"b":"DIRECT","bt":"прямой; направлять","a":"INDIRECTLY","at":"косвенно"},{"b":"DIRECTNESS","bt":"прямота","a":"INDIRECTNESS","at":"уклончивость, косвенность"},{"b":"DISCOVER","bt":"открывать, обнаруживать","a":"DISCOVERY","at":"открытие"},{"b":"DISGUST","bt":"отвращение; вызывать отвращение","a":"DISGUSTED","at":"испытывающий отвращение"},{"b":"DISGUST","bt":"отвращение; вызывать отвращение","a":"DISGUSTING","at":"отвратительный"},{"b":"DISPUTABLE","bt":"спорный","a":"INDISPUTABLE","at":"бесспорный"},{"b":"DISTANT","bt":"далёкий, отдалённый","a":"DISTANCE","at":"расстояние"},{"b":"DISTANT","bt":"далёкий, отдалённый","a":"DISTANTLY","at":"отдалённо"},{"b":"DIVE","bt":"нырять","a":"DIVER","at":"ныряльщик, водолаз","x":["DIVERS"]},{"b":"DIVE","bt":"нырять","a":"DIVING","at":"ныряние, дайвинг"},{"b":"DIVERSE","bt":"разнообразный","a":"DIVERSITY","at":"разнообразие"},{"b":"DIVORCE","bt":"развод; разводиться","a":"DIVORCED","at":"разведённый"},{"b":"DOMINATE","bt":"доминировать, преобладать","a":"DOMINANCE","at":"доминирование, господство"},{"b":"DONATE","bt":"жертвовать, дарить","a":"DONATION","at":"пожертвование"},{"b":"DOUBT","bt":"сомнение; сомневаться","a":"DOUBTLESSLY","at":"несомненно"},{"b":"DOUBT","bt":"сомнение; сомневаться","a":"UNDOUBTEDLY","at":"несомненно"},{"b":"DRAMA","bt":"драма","a":"DRAMATIC","at":"драматический, резкий"},{"b":"DRAMA","bt":"драма","a":"DRAMATICALLY","at":"резко, кардинально"},{"b":"DRAMA","bt":"драма","a":"DRAMATIST","at":"драматург"},{"b":"DRAW","bt":"рисовать; тянуть","a":"DRAWING","at":"рисунок; рисование"},{"b":"EASY","bt":"лёгкий","a":"EASILY","at":"легко"},{"b":"EAT","bt":"есть, кушать","a":"EDIBLE","at":"съедобный"},{"b":"EAT","bt":"есть, кушать","a":"INEDIBLE","at":"несъедобный"},{"b":"EDIT","bt":"редактировать","a":"EDITION","at":"издание, выпуск"},{"b":"EDIT","bt":"редактировать","a":"EDITOR","at":"редактор"},{"b":"EDUCATE","bt":"обучать, давать образование","a":"EDUCATION","at":"образование"},{"b":"EDUCATE","bt":"обучать, давать образование","a":"EDUCATIONAL","at":"образовательный, учебный"},{"b":"EFFECT","bt":"эффект, воздействие","a":"EFFECTIVE","at":"эффективный"},{"b":"EFFECT","bt":"эффект, воздействие","a":"EFFECTIVELY","at":"эффективно"},{"b":"EFFECT","bt":"эффект, воздействие","a":"EFFECTIVENESS","at":"эффективность"},{"b":"EFFECT","bt":"эффект, воздействие","a":"INEFFECTIVE","at":"неэффективный"},{"b":"EFFORT","bt":"усилие","a":"EFFORTLESS","at":"лёгкий, без усилий"},{"b":"ELECTRIC","bt":"электрический","a":"ELECTRICAL","at":"электрический, электротехнический"},{"b":"ELECTRIC","bt":"электрический","a":"ELECTRICIAN","at":"электрик"},{"b":"ELECTRIC","bt":"электрический","a":"ELECTRICITY","at":"электричество"},{"b":"EMPLOY","bt":"нанимать; использовать","a":"EMPLOYEE","at":"сотрудник, работник"},{"b":"EMPLOY","bt":"нанимать; использовать","a":"EMPLOYER","at":"работодатель"},{"b":"EMPLOY","bt":"нанимать; использовать","a":"EMPLOYMENT","at":"занятость, трудоустройство"},{"b":"EMPLOY","bt":"нанимать; использовать","a":"UNEMPLOYMENT","at":"безработица"},{"b":"ENCOURAGE","bt":"поощрять, ободрять","a":"ENCOURAGEMENT","at":"поощрение, поддержка"},{"b":"END","bt":"конец; заканчивать","a":"ENDLESS","at":"бесконечный"},{"b":"ENGINEER","bt":"инженер","a":"ENGINEERING","at":"инженерное дело, машиностроение"},{"b":"ENJOY","bt":"наслаждаться, получать удовольствие","a":"ENJOYABLE","at":"приятный"},{"b":"ENJOY","bt":"наслаждаться, получать удовольствие","a":"ENJOYMENT","at":"удовольствие, наслаждение"},{"b":"ENTER","bt":"входить; вводить","a":"ENTRANCE","at":"вход"},{"b":"ENTERTAIN","bt":"развлекать","a":"ENTERTAINMENT","at":"развлечение"},{"b":"ENTHUSIASTIC","bt":"полный энтузиазма, восторженный","a":"ENTHUSIASM","at":"энтузиазм"},{"b":"EQUAL","bt":"равный","a":"EQUALITY","at":"равенство"},{"b":"EQUALITY","bt":"равенство","a":"INEQUALITY","at":"неравенство"},{"b":"EQUIP","bt":"оснащать, снаряжать","a":"EQUIPMENT","at":"оборудование, снаряжение"},{"b":"EQUIP","bt":"оснащать, снаряжать","a":"EQUIPPED","at":"оснащённый"},{"b":"ERECT","bt":"возводить; прямой","a":"ERECTION","at":"возведение, сооружение"},{"b":"ERUPT","bt":"извергаться, вспыхивать","a":"ERUPTION","at":"извержение"},{"b":"ESSENCE","bt":"сущность, суть","a":"ESSENTIAL","at":"существенный, необходимый"},{"b":"ESTABLISH","bt":"учреждать, устанавливать","a":"ESTABLISHMENT","at":"учреждение, заведение"},{"b":"EUROPE","bt":"Европа","a":"EUROPEAN","at":"европейский; европеец"},{"b":"EVITABLE","bt":"предотвратимый","a":"INEVITABLE","at":"неизбежный"},{"b":"EXACT","bt":"точный","a":"EXACTLY","at":"точно"},{"b":"EXAM","bt":"экзамен","a":"EXAMINATION","at":"экзамен; осмотр, исследование"},{"b":"EXCITE","bt":"волновать, возбуждать","a":"EXCITEMENT","at":"волнение, возбуждение"},{"b":"EXCITE","bt":"волновать, возбуждать","a":"EXCITING","at":"захватывающий, волнующий"},{"b":"EXIST","bt":"существовать","a":"EXISTENCE","at":"существование"},{"b":"EXPECT","bt":"ожидать","a":"EXPECTATION","at":"ожидание","x":["EXPECTATIONS"]},{"b":"EXPENSIVE","bt":"дорогой","a":"EXPENSIVELY","at":"дорого"},{"b":"EXPENSIVE","bt":"дорогой","a":"INEXPENSIVE","at":"недорогой"},{"b":"EXPERIMENT","bt":"эксперимент; экспериментировать","a":"EXPERIMENTER","at":"экспериментатор"},{"b":"EXPLAIN","bt":"объяснять","a":"EXPLANATION","at":"объяснение"},{"b":"EXPLORE","bt":"исследовать","a":"EXPLORATION","at":"исследование, разведка"},{"b":"EXPLORE","bt":"исследовать","a":"EXPLORER","at":"исследователь, путешественник","x":["EXPLORERS"]},{"b":"EXPRESS","bt":"выражать; экспресс","a":"EXPRESSION","at":"выражение"},{"b":"EXPRESS","bt":"выражать; экспресс","a":"EXPRESSIVE","at":"выразительный"},{"b":"EXTEND","bt":"расширять, продлевать","a":"EXTENDED","at":"расширенный, продлённый"},{"b":"FACE","bt":"лицо; сталкиваться","a":"FACIAL","at":"лицевой, для лица"},{"b":"FAIR","bt":"честный, справедливый; ярмарка","a":"UNFAIR","at":"несправедливый"},{"b":"FAMILIAR","bt":"знакомый","a":"FAMILIARISE","at":"знакомить, ознакомлять","x":["FAMILIARIZE"]},{"b":"FAMILIAR","bt":"знакомый","a":"UNFAMILIAR","at":"незнакомый"},{"b":"FANTASY","bt":"фантазия","a":"FANTASTIC","at":"фантастический, потрясающий"},{"b":"FASCINATE","bt":"очаровывать, увлекать","a":"FASCINATING","at":"очаровательный, увлекательный"},{"b":"FEEL","bt":"чувствовать","a":"FEELING","at":"чувство","x":["FEELINGS"]},{"b":"FINAL","bt":"финальный, окончательный; финал","a":"FINALIST","at":"финалист"},{"b":"FINAL","bt":"финальный, окончательный; финал","a":"FINALLY","at":"наконец, в конце концов"},{"b":"FIND","bt":"находить","a":"FINDINGS","at":"выводы, результаты"},{"b":"FLAT","bt":"плоский; квартира","a":"FLATTEN","at":"выравнивать, сплющивать"},{"b":"FLUENT","bt":"беглый, свободно владеющий","a":"FLUENCY","at":"беглость (речи)"},{"b":"FOREIGN","bt":"иностранный","a":"FOREIGNER","at":"иностранец","x":["FOREIGNERS"]},{"b":"FORGET","bt":"забывать","a":"UNFORGETTABLE","at":"незабываемый"},{"b":"FORTUNE","bt":"удача; состояние, богатство","a":"FORTUNATE","at":"удачливый, счастливый"},{"b":"FORTUNE","bt":"удача; состояние, богатство","a":"FORTUNATELY","at":"к счастью"},{"b":"FORTUNE","bt":"удача; состояние, богатство","a":"MISFORTUNE","at":"несчастье, неудача"},{"b":"FORTUNE","bt":"удача; состояние, богатство","a":"UNFORTUNATE","at":"неудачный, несчастливый"},{"b":"FORTUNE","bt":"удача; состояние, богатство","a":"UNFORTUNATELY","at":"к сожалению"},{"b":"FOUND","bt":"основывать","a":"FOUNDATION","at":"основа, фундамент; фонд"},{"b":"FOUND","bt":"основывать","a":"FOUNDER","at":"основатель","x":["FOUNDERS"]},{"b":"FREE","bt":"свободный; бесплатный","a":"FREELY","at":"свободно"},{"b":"FREQUENT","bt":"частый","a":"FREQUENTLY","at":"часто"},{"b":"FRIEND","bt":"друг","a":"FRIENDLY","at":"дружелюбный"},{"b":"FRIEND","bt":"друг","a":"FRIENDSHIP","at":"дружба"},{"b":"FULL","bt":"полный","a":"FULLY","at":"полностью"},{"b":"FURY","bt":"ярость","a":"FURIOUS","at":"яростный, разъярённый"},{"b":"GARDEN","bt":"сад","a":"GARDENER","at":"садовник"},{"b":"GENERAL","bt":"общий; генерал","a":"GENERALLY","at":"в общем, обычно"},{"b":"GEOGRAPHY","bt":"география","a":"GEOGRAPHIC","at":"географический"},{"b":"GLOBE","bt":"земной шар, глобус","a":"GLOBAL","at":"глобальный, мировой"},{"b":"GLORY","bt":"слава","a":"GLORIOUS","at":"славный, великолепный"},{"b":"GOVERN","bt":"управлять, править","a":"GOVERNMENT","at":"правительство"},{"b":"GOVERN","bt":"управлять, править","a":"GOVERNOR","at":"губернатор"},{"b":"GREAT","bt":"великий; отличный","a":"GREATNESS","at":"величие"},{"b":"GROW","bt":"расти; выращивать","a":"GROWER","at":"производитель, садовод"},{"b":"GROW","bt":"расти; выращивать","a":"GROWN","at":"выросший, взрослый"},{"b":"GROW","bt":"расти; выращивать","a":"GROWTH","at":"рост"},{"b":"GUIDE","bt":"гид, проводник; вести","a":"GUIDANCE","at":"руководство, наставление"},{"b":"GUITAR","bt":"гитара","a":"GUITARIST","at":"гитарист"},{"b":"HAPPY","bt":"счастливый","a":"HAPPILY","at":"счастливо, радостно"},{"b":"HAPPY","bt":"счастливый","a":"HAPPINESS","at":"счастье"},{"b":"HAPPY","bt":"счастливый","a":"UNHAPPILY","at":"несчастливо; к несчастью"},{"b":"HAPPY","bt":"счастливый","a":"UNHAPPINESS","at":"несчастье"},{"b":"HAPPY","bt":"счастливый","a":"UNHAPPY","at":"несчастный"},{"b":"HEALTH","bt":"здоровье","a":"HEALTHY","at":"здоровый"},{"b":"HEALTH","bt":"здоровье","a":"UNHEALTHY","at":"нездоровый, вредный"},{"b":"HELP","bt":"помощь; помогать","a":"HELPFUL","at":"полезный"},{"b":"HELP","bt":"помощь; помогать","a":"HELPLESS","at":"беспомощный"},{"b":"HERO","bt":"герой","a":"HEROIC","at":"героический"},{"b":"HERO","bt":"герой","a":"HEROISM","at":"героизм"},{"b":"HIGH","bt":"высокий","a":"HEIGHT","at":"высота, рост"},{"b":"HIGH","bt":"высокий","a":"HIGHLY","at":"высоко, весьма"},{"b":"HIKE","bt":"поход; ходить в поход","a":"HIKER","at":"турист, любитель походов","x":["HIKERS"]},{"b":"HIKE","bt":"поход; ходить в поход","a":"HIKING","at":"пеший туризм, походы"},{"b":"HOME","bt":"дом","a":"HOMELESS","at":"бездомный"},{"b":"HONEST","bt":"честный","a":"DISHONEST","at":"нечестный"},{"b":"HUNT","bt":"охотиться; охота","a":"HUNTER","at":"охотник","x":["HUNTERS"]},{"b":"HUNT","bt":"охотиться; охота","a":"HUNTING","at":"охота"},{"b":"IGNORE","bt":"игнорировать","a":"IGNORANCE","at":"невежество, незнание"},{"b":"ILLUSTRATE","bt":"иллюстрировать","a":"ILLUSTRATOR","at":"иллюстратор"},{"b":"IMPORTANCE","bt":"важность","a":"IMPORTANT","at":"важный"},{"b":"IMPORTANT","bt":"важный","a":"IMPORTANCE","at":"важность"},{"b":"IMPRESS","bt":"впечатлять","a":"IMPRESSION","at":"впечатление"},{"b":"IMPRESS","bt":"впечатлять","a":"IMPRESSIVE","at":"впечатляющий"},{"b":"IMPROVE","bt":"улучшать","a":"IMPROVEMENT","at":"улучшение"},{"b":"INCREASE","bt":"увеличивать(ся); увеличение","a":"INCREASINGLY","at":"всё больше, всё чаще"},{"b":"INDEPENDENT","bt":"независимый","a":"INDEPENDENCE","at":"независимость"},{"b":"INDUSTRY","bt":"промышленность, индустрия","a":"INDUSTRIAL","at":"промышленный"},{"b":"INFECT","bt":"заражать","a":"INFECTION","at":"инфекция, заражение","x":["INFECTIONS"]},{"b":"INFORM","bt":"информировать, сообщать","a":"INFORMATION","at":"информация"},{"b":"INFORM","bt":"информировать, сообщать","a":"INFORMED","at":"осведомлённый"},{"b":"INHABIT","bt":"населять, обитать","a":"INHABITANT","at":"житель, обитатель","x":["INHABITANTS"]},{"b":"INSPIRE","bt":"вдохновлять","a":"INSPIRATION","at":"вдохновение"},{"b":"INSTALL","bt":"устанавливать","a":"INSTALLATION","at":"установка, монтаж"},{"b":"INSTRUCT","bt":"инструктировать, обучать","a":"INSTRUCTION","at":"инструкция, указание"},{"b":"INTELLIGENT","bt":"умный, разумный","a":"INTELLIGENCE","at":"интеллект, ум; разведка"},{"b":"INTEREST","bt":"интерес; проценты","a":"INTERESTING","at":"интересный"},{"b":"INTEREST","bt":"интерес; проценты","a":"INTERESTINGLY","at":"интересно (что)"},{"b":"INTEREST","bt":"интерес; проценты","a":"UNINTERESTING","at":"неинтересный"},{"b":"INTERRUPT","bt":"прерывать","a":"INTERRUPTION","at":"прерывание, помеха"},{"b":"INTRODUCE","bt":"представлять, вводить","a":"INTRODUCTION","at":"введение, представление"},{"b":"INTROVERT","bt":"интроверт","a":"INTROVERTED","at":"замкнутый, интровертный"},{"b":"INVENT","bt":"изобретать","a":"INVENTION","at":"изобретение"},{"b":"INVENT","bt":"изобретать","a":"INVENTOR","at":"изобретатель"},{"b":"INVEST","bt":"инвестировать, вкладывать","a":"INVESTOR","at":"инвестор"},{"b":"IRRITATE","bt":"раздражать","a":"IRRITATION","at":"раздражение"},{"b":"JEALOUS","bt":"ревнивый, завистливый","a":"JEALOUSY","at":"ревность, зависть"},{"b":"JEWEL","bt":"драгоценность, драгоценный камень","a":"JEWELLER","at":"ювелир","x":["JEWELLERS"]},{"b":"JOG","bt":"бегать трусцой","a":"JOGGER","at":"бегун трусцой"},{"b":"JOG","bt":"бегать трусцой","a":"JOGGING","at":"бег трусцой"},{"b":"JOURNAL","bt":"журнал, дневник","a":"JOURNALIST","at":"журналист"},{"b":"KIND","bt":"добрый; вид, тип","a":"KINDLY","at":"любезно, доброжелательно"},{"b":"KIND","bt":"добрый; вид, тип","a":"KINDNESS","at":"доброта"},{"b":"KIND","bt":"добрый; вид, тип","a":"UNKIND","at":"недобрый, злой"},{"b":"KIND","bt":"добрый; вид, тип","a":"UNKINDNESS","at":"недоброта, злость"},{"b":"KNOW","bt":"знать","a":"KNOWLEDGE","at":"знание"},{"b":"KNOW","bt":"знать","a":"KNOWLEDGEABLE","at":"знающий, осведомлённый"},{"b":"KNOW","bt":"знать","a":"UNKNOWN","at":"неизвестный"},{"b":"LARGE","bt":"большой","a":"LARGELY","at":"в значительной степени"},{"b":"LAW","bt":"закон; право","a":"LAWYER","at":"юрист, адвокат","x":["LAWYERS"]},{"b":"LEAD","bt":"вести, возглавлять","a":"LEADER","at":"лидер, руководитель"},{"b":"LEAD","bt":"вести, возглавлять","a":"LEADING","at":"ведущий, главный"},{"b":"LEAD","bt":"вести, возглавлять","a":"MISLEAD","at":"вводить в заблуждение"},{"b":"LIKE","bt":"нравиться; подобный","a":"UNLIKE","at":"в отличие от; непохожий"},{"b":"LITTLE","bt":"маленький; мало","a":"LESS","at":"меньше"},{"b":"LOCAL","bt":"местный","a":"LOCATION","at":"местоположение, место","x":["LOCATIONS"]},{"b":"LONG","bt":"длинный, долгий","a":"LENGTH","at":"длина"},{"b":"LOSE","bt":"терять; проигрывать","a":"LOSS","at":"потеря; проигрыш"},{"b":"LOSE","bt":"терять; проигрывать","a":"LOST","at":"потерянный, заблудившийся"},{"b":"LOVE","bt":"любовь; любить","a":"LOVER","at":"любитель; возлюбленный","x":["LOVERS"]},{"b":"LUCKY","bt":"удачливый, везучий","a":"UNLUCKY","at":"невезучий, несчастливый"},{"b":"MACHINE","bt":"машина, механизм","a":"MACHINERY","at":"механизмы, оборудование"},{"b":"MAD","bt":"сумасшедший; злой","a":"MADNESS","at":"безумие"},{"b":"MAINTAIN","bt":"поддерживать; обслуживать","a":"MAINTENANCE","at":"обслуживание, поддержание"},{"b":"MANAGE","bt":"управлять; справляться","a":"MANAGEABLE","at":"управляемый, выполнимый"},{"b":"MANAGE","bt":"управлять; справляться","a":"MANAGEMENT","at":"управление, менеджмент"},{"b":"MANAGE","bt":"управлять; справляться","a":"UNMANAGEABLE","at":"неуправляемый"},{"b":"MARRY","bt":"жениться, выходить замуж","a":"MARRIAGE","at":"брак, женитьба"},{"b":"MARRY","bt":"жениться, выходить замуж","a":"MARRIED","at":"женатый, замужняя"},{"b":"MARRY","bt":"жениться, выходить замуж","a":"UNMARRIED","at":"неженатый, незамужняя"},{"b":"MARVEL","bt":"чудо; восхищаться","a":"MARVELOUS","at":"изумительный, чудесный"},{"b":"MASS","bt":"масса; массовый","a":"MASSIVE","at":"массивный, огромный"},{"b":"MEAN","bt":"значить; подлый","a":"MEANING","at":"значение, смысл"},{"b":"MEAN","bt":"значить; подлый","a":"MEANINGFUL","at":"значимый, осмысленный"},{"b":"MEAN","bt":"значить; подлый","a":"MEANINGLESS","at":"бессмысленный"},{"b":"MEDAL","bt":"медаль","a":"MEDALLION","at":"медальон"},{"b":"MEDAL","bt":"медаль","a":"MEDALLIST","at":"медалист, призёр"},{"b":"MEDICINE","bt":"медицина; лекарство","a":"MEDICAL","at":"медицинский"},{"b":"MEMORY","bt":"память; воспоминание","a":"MEMORABLE","at":"запоминающийся, памятный"},{"b":"MERE","bt":"всего лишь, простой","a":"MERELY","at":"всего лишь, просто"},{"b":"MESS","bt":"беспорядок","a":"MESSY","at":"беспорядочный, грязный"},{"b":"MISERY","bt":"страдание, нищета","a":"MISERABLE","at":"несчастный, жалкий"},{"b":"MIX","bt":"смешивать","a":"MIXED","at":"смешанный"},{"b":"MIX","bt":"смешивать","a":"MIXER","at":"миксер; смеситель"},{"b":"MIX","bt":"смешивать","a":"MIXTURE","at":"смесь"},{"b":"MODERN","bt":"современный","a":"MODERNIZE","at":"модернизировать","x":["MODERNISE"]},{"b":"MOVE","bt":"двигать(ся); переезжать","a":"MOVEMENT","at":"движение"},{"b":"MYSTERY","bt":"тайна, загадка","a":"MYSTERIOUS","at":"таинственный, загадочный"},{"b":"NATION","bt":"нация, народ; страна","a":"NATIONAL","at":"национальный, государственный"},{"b":"NATIONAL","bt":"национальный, государственный","a":"INTERNATIONAL","at":"международный"},{"b":"NATURAL","bt":"природный, естественный","a":"NATURALLY","at":"естественно, от природы"},{"b":"NAVIGATE","bt":"ориентироваться, вести судно","a":"NAVIGATOR","at":"навигатор, штурман"},{"b":"NECESSARY","bt":"необходимый","a":"NECESSARILY","at":"обязательно, неизбежно"},{"b":"NEIGHBOUR","bt":"сосед","a":"NEIGHBOURHOOD","at":"район, соседство"},{"b":"NEIGHBOUR","bt":"сосед","a":"NEIGHBOURING","at":"соседний"},{"b":"NERVE","bt":"нерв; смелость","a":"NERVOUS","at":"нервный"},{"b":"NERVE","bt":"нерв; смелость","a":"NERVOUSLY","at":"нервно"},{"b":"NERVE","bt":"нерв; смелость","a":"NERVOUSNESS","at":"нервозность"},{"b":"NEW","bt":"новый","a":"NEWLY","at":"недавно, заново"},{"b":"NOMINATE","bt":"номинировать, выдвигать","a":"NOMINATION","at":"номинация, выдвижение","x":["NOMINATIONS"]},{"b":"NORMAL","bt":"нормальный, обычный","a":"NORMALLY","at":"обычно, в норме"},{"b":"NOTICE","bt":"замечать; уведомление","a":"NOTICEABLE","at":"заметный"},{"b":"NOTICED","bt":"замеченный","a":"UNNOTICED","at":"незамеченный"},{"b":"NOURISH","bt":"питать, кормить","a":"NOURISHMENT","at":"питание, пища"},{"b":"NUTRITION","bt":"питание (наука о)","a":"NUTRITIONAL","at":"питательный, пищевой"},{"b":"OBESE","bt":"страдающий ожирением, тучный","a":"OBESITY","at":"ожирение"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"DISOBEDIENCE","at":"непослушание"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"DISOBEDIENT","at":"непослушный"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"DISOBEY","at":"не подчиняться"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"OBEDIENCE","at":"послушание, повиновение"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"OBEDIENT","at":"послушный"},{"b":"OBEY","bt":"подчиняться, слушаться","a":"OBEDIENTLY","at":"послушно"},{"b":"OBSERVE","bt":"наблюдать; соблюдать","a":"OBSERVATION","at":"наблюдение"},{"b":"OCCUPY","bt":"занимать","a":"OCCUPATION","at":"занятие, профессия; оккупация"},{"b":"OFFEND","bt":"обижать, оскорблять","a":"OFFENSIVE","at":"оскорбительный; наступательный"},{"b":"OPEN","bt":"открывать; открытый","a":"OPENLY","at":"открыто, откровенно"},{"b":"OPERATE","bt":"работать; оперировать","a":"OPERATOR","at":"оператор"},{"b":"OPPOSE","bt":"противостоять, выступать против","a":"OPPONENT","at":"оппонент, противник"},{"b":"OPPOSE","bt":"противостоять, выступать против","a":"OPPOSING","at":"противоположный, противостоящий"},{"b":"OPPOSE","bt":"противостоять, выступать против","a":"OPPOSITE","at":"противоположный; напротив"},{"b":"OPPOSE","bt":"противостоять, выступать против","a":"OPPOSITION","at":"оппозиция, сопротивление"},{"b":"OPTIMISM","bt":"оптимизм","a":"OPTIMISTIC","at":"оптимистичный"},{"b":"ORGANIZE","bt":"организовывать","a":"ORGANIZATION","at":"организация","x":["ORGANISATION"]},{"b":"ORIGIN","bt":"происхождение, источник","a":"ORIGINAL","at":"оригинальный; первоначальный"},{"b":"ORIGIN","bt":"происхождение, источник","a":"ORIGINALITY","at":"оригинальность"},{"b":"ORIGIN","bt":"происхождение, источник","a":"ORIGINALLY","at":"первоначально, изначально"},{"b":"ORIGIN","bt":"происхождение, источник","a":"ORIGINATE","at":"возникать, происходить"},{"b":"ORIGIN","bt":"происхождение, источник","a":"ORIGINATOR","at":"создатель, родоначальник"},{"b":"ORIGIN","bt":"происхождение, источник","a":"UNORIGINAL","at":"неоригинальный"},{"b":"ORIGIN","bt":"происхождение, источник","a":"UNORIGINALLY","at":"неоригинально"},{"b":"OWN","bt":"владеть; собственный","a":"OWNER","at":"владелец"},{"b":"OWN","bt":"владеть; собственный","a":"OWNERSHIP","at":"собственность, владение"},{"b":"PAINT","bt":"краска; красить, рисовать","a":"PAINTER","at":"художник; маляр"},{"b":"PAINT","bt":"краска; красить, рисовать","a":"PAINTING","at":"картина; живопись"},{"b":"PANORAMA","bt":"панорама","a":"PANORAMIC","at":"панорамный"},{"b":"PASSION","bt":"страсть","a":"PASSIONATE","at":"страстный, пылкий"},{"b":"PASSION","bt":"страсть","a":"PASSIONATELY","at":"страстно"},{"b":"PATIENT","bt":"терпеливый; пациент","a":"PATIENCE","at":"терпение"},{"b":"PATRIOT","bt":"патриот","a":"PATRIOTIC","at":"патриотичный"},{"b":"PEACE","bt":"мир, покой","a":"PEACEFUL","at":"мирный, спокойный"},{"b":"PERFECT","bt":"совершенный, идеальный","a":"PERFECTION","at":"совершенство"},{"b":"PERFORM","bt":"выполнять; выступать","a":"PERFORMANCE","at":"выступление; производительность"},{"b":"PERFORM","bt":"выполнять; выступать","a":"PERFORMER","at":"исполнитель, артист"},{"b":"PERIOD","bt":"период; точка","a":"PERIODIC","at":"периодический"},{"b":"PERIOD","bt":"период; точка","a":"PERIODICAL","at":"периодическое издание; периодический"},{"b":"PERSON","bt":"человек, лицо","a":"IMPERSONAL","at":"безличный"},{"b":"PERSON","bt":"человек, лицо","a":"IMPERSONALLY","at":"безлично"},{"b":"PERSON","bt":"человек, лицо","a":"PERSONAL","at":"личный"},{"b":"PERSON","bt":"человек, лицо","a":"PERSONALITY","at":"личность, характер"},{"b":"PERSON","bt":"человек, лицо","a":"PERSONALLY","at":"лично"},{"b":"PHILOSOPHY","bt":"философия","a":"PHILOSOPHER","at":"философ","x":["PHILOSOPHERS"]},{"b":"PHOTOGRAPH","bt":"фотография; фотографировать","a":"PHOTOGRAPHER","at":"фотограф"},{"b":"PHOTOGRAPH","bt":"фотография; фотографировать","a":"PHOTOGRAPHIC","at":"фотографический"},{"b":"PHOTOGRAPH","bt":"фотография; фотографировать","a":"PHOTOGRAPHY","at":"фотография (искусство)"},{"b":"PHYSICS","bt":"физика","a":"PHYSICIST","at":"физик"},{"b":"PLACE","bt":"место; помещать","a":"REPLACE","at":"заменять"},{"b":"PLAY","bt":"играть; пьеса","a":"PLAYFUL","at":"игривый, шутливый"},{"b":"POLITE","bt":"вежливый","a":"IMPOLITE","at":"невежливый"},{"b":"POLITE","bt":"вежливый","a":"IMPOLITENESS","at":"невежливость"},{"b":"POLITE","bt":"вежливый","a":"POLITELY","at":"вежливо"},{"b":"POLITE","bt":"вежливый","a":"POLITENESS","at":"вежливость"},{"b":"POLITICS","bt":"политика","a":"POLITICAL","at":"политический"},{"b":"POLITICS","bt":"политика","a":"POLITICIAN","at":"политик","x":["POLITICIANS"]},{"b":"POLLUTE","bt":"загрязнять","a":"POLLUTION","at":"загрязнение"},{"b":"POOR","bt":"бедный; плохой","a":"POVERTY","at":"бедность, нищета"},{"b":"POPULAR","bt":"популярный","a":"POPULARITY","at":"популярность"},{"b":"POPULAR","bt":"популярный","a":"POPULARLY","at":"широко, в народе"},{"b":"POPULAR","bt":"популярный","a":"POPULATION","at":"население"},{"b":"POPULAR","bt":"популярный","a":"UNPOPULAR","at":"непопулярный"},{"b":"POPULATE","bt":"населять, заселять","a":"POPULATION","at":"население"},{"b":"POPULATED","bt":"населённый","a":"UNPOPULATED","at":"ненаселённый"},{"b":"POSSESS","bt":"обладать, владеть","a":"POSSESSION","at":"обладание; имущество"},{"b":"POSSIBLE","bt":"возможный","a":"IMPOSSIBLE","at":"невозможный"},{"b":"POSSIBLE","bt":"возможный","a":"POSSIBILITY","at":"возможность","x":["POSSIBILITIES"]},{"b":"POWER","bt":"сила, мощь; власть","a":"POWERFUL","at":"мощный, сильный"},{"b":"POWER","bt":"сила, мощь; власть","a":"POWERLESS","at":"бессильный"},{"b":"PRACTICAL","bt":"практичный, практический","a":"PRACTICALLY","at":"практически"},{"b":"PRACTICE","bt":"практика; тренировка","a":"IMPRACTICAL","at":"непрактичный"},{"b":"PRACTICE","bt":"практика; тренировка","a":"PRACTICAL","at":"практичный, практический"},{"b":"PRACTICE","bt":"практика; тренировка","a":"PRACTICALLY","at":"практически"},{"b":"PRACTICE","bt":"практика; тренировка","a":"PRACTISE","at":"практиковать, тренироваться","x":["PRACTIZE"]},{"b":"PREDICTABLE","bt":"предсказуемый","a":"UNPREDICTABLE","at":"непредсказуемый"},{"b":"PREPARE","bt":"готовить, подготавливать","a":"PREPARATION","at":"подготовка, приготовление"},{"b":"PREPARE","bt":"готовить, подготавливать","a":"PREPARATORY","at":"подготовительный"},{"b":"PREPARE","bt":"готовить, подготавливать","a":"UNPREPARED","at":"неподготовленный"},{"b":"PREVENT","bt":"предотвращать, мешать","a":"PREVENTION","at":"предотвращение, профилактика"},{"b":"PRINT","bt":"печатать; печать","a":"REPRINT","at":"переиздавать; переиздание"},{"b":"PRIORITY","bt":"приоритет","a":"PRIORITISE","at":"расставлять приоритеты","x":["PRIORITIZE"]},{"b":"PRIORITY","bt":"приоритет","a":"PRIORITIZE","at":"расставлять приоритеты","x":["PRIORITISE"]},{"b":"PRISON","bt":"тюрьма","a":"PRISONER","at":"заключённый, пленник"},{"b":"PRODUCE","bt":"производить; продукция","a":"PRODUCTIVE","at":"продуктивный, производительный"},{"b":"PRODUCE","bt":"производить; продукция","a":"REPRODUCE","at":"воспроизводить; размножаться"},{"b":"PROFESSION","bt":"профессия","a":"PROFESSIONAL","at":"профессиональный; профессионал"},{"b":"PROFICIENT","bt":"умелый, искусный","a":"PROFICIENCY","at":"мастерство, владение"},{"b":"PRONOUNCE","bt":"произносить","a":"PRONUNCIATION","at":"произношение"},{"b":"PROSPER","bt":"процветать","a":"PROSPERITY","at":"процветание"},{"b":"PROTECT","bt":"защищать","a":"PROTECTION","at":"защита"},{"b":"PROTECT","bt":"защищать","a":"PROTECTIVE","at":"защитный, оберегающий"},{"b":"PROVE","bt":"доказывать","a":"PROOF","at":"доказательство"},{"b":"PSYCHOLOGY","bt":"психология","a":"PSYCHOLOGICAL","at":"психологический"},{"b":"PUBLIC","bt":"общественный, публичный; публика","a":"PUBLICISE","at":"предавать огласке, рекламировать","x":["PUBLICIZE"]},{"b":"PUBLISH","bt":"публиковать, издавать","a":"PUBLISHER","at":"издатель"},{"b":"QUESTION","bt":"вопрос; спрашивать","a":"QUESTIONING","at":"вопрошающий; допрос"},{"b":"RACE","bt":"гонка; раса; мчаться","a":"RACER","at":"гонщик"},{"b":"RAPID","bt":"быстрый, стремительный","a":"RAPIDLY","at":"быстро"},{"b":"READ","bt":"читать","a":"READABLE","at":"читаемый, разборчивый"},{"b":"READ","bt":"читать","a":"READER","at":"читатель","x":["READERS"]},{"b":"READ","bt":"читать","a":"REREAD","at":"перечитывать"},{"b":"READ","bt":"читать","a":"UNREADABLE","at":"нечитаемый"},{"b":"REAL","bt":"реальный, настоящий","a":"REALISE","at":"осознавать; осуществлять","x":["REALIZE"]},{"b":"REAL","bt":"реальный, настоящий","a":"REALITY","at":"реальность"},{"b":"REAL","bt":"реальный, настоящий","a":"REALLY","at":"действительно, очень"},{"b":"REAL","bt":"реальный, настоящий","a":"UNREAL","at":"нереальный"},{"b":"RECEPTION","bt":"приём; ресепшн","a":"RECEPTIONIST","at":"администратор, секретарь"},{"b":"RECOGNIZE","bt":"узнавать; признавать","a":"RECOGNITION","at":"признание; узнавание"},{"b":"RECOGNIZE","bt":"узнавать; признавать","a":"RECOGNIZABLE","at":"узнаваемый"},{"b":"RECOGNIZE","bt":"узнавать; признавать","a":"UNRECOGNISABLE","at":"неузнаваемый"},{"b":"REDUCE","bt":"сокращать, уменьшать","a":"REDUCTION","at":"сокращение, снижение"},{"b":"REFER","bt":"ссылаться, отсылать","a":"REFERENCE","at":"ссылка; рекомендация"},{"b":"REFRIGERATE","bt":"охлаждать, замораживать","a":"REFRIGERATION","at":"охлаждение, заморозка"},{"b":"REGARD","bt":"считать; уважение","a":"REGARDLESS","at":"независимо, невзирая"},{"b":"REGULAR","bt":"регулярный, обычный","a":"REGULARLY","at":"регулярно"},{"b":"REGULATE","bt":"регулировать","a":"REGULATION","at":"регулирование; правило","x":["REGULATIONS"]},{"b":"RELATE","bt":"относиться, связывать","a":"RELATION","at":"отношение, связь; родственник"},{"b":"RELATE","bt":"относиться, связывать","a":"RELATIONSHIP","at":"отношения, взаимосвязь"},{"b":"RELATE","bt":"относиться, связывать","a":"RELATIVE","at":"родственник; относительный"},{"b":"RELATE","bt":"относиться, связывать","a":"RELATIVELY","at":"относительно"},{"b":"RELATION","bt":"отношение, связь; родственник","a":"RELATIONSHIP","at":"отношения, взаимосвязь"},{"b":"RELIGION","bt":"религия","a":"RELIGIOUS","at":"религиозный"},{"b":"RELY","bt":"полагаться, надеяться","a":"RELIABLE","at":"надёжный"},{"b":"RELY","bt":"полагаться, надеяться","a":"UNRELIABLE","at":"ненадёжный"},{"b":"REMARK","bt":"замечание; замечать","a":"REMARKABLY","at":"удивительно, замечательно"},{"b":"REMARK","bt":"замечание; замечать","a":"UNREMARKABLE","at":"ничем не примечательный"},{"b":"RESEARCH","bt":"исследование; исследовать","a":"RESEARCHER","at":"исследователь"},{"b":"RESERVE","bt":"резервировать; запас","a":"RESERVATION","at":"бронирование; оговорка"},{"b":"RESIDE","bt":"проживать","a":"RESIDENCE","at":"место жительства, резиденция"},{"b":"RESIST","bt":"сопротивляться, противостоять","a":"RESISTANCE","at":"сопротивление"},{"b":"RESPECT","bt":"уважение; уважать","a":"RESPECTFUL","at":"уважительный, почтительный"},{"b":"RESPECT","bt":"уважение; уважать","a":"RESPECTFULLY","at":"уважительно, почтительно"},{"b":"RESPONSE","bt":"ответ, реакция","a":"IRRESPONSIBLE","at":"безответственный"},{"b":"RESPONSE","bt":"ответ, реакция","a":"RESPONSIBLE","at":"ответственный"},{"b":"REST","bt":"отдых; отдыхать; остаток","a":"UNREST","at":"волнения, беспорядки"},{"b":"RETIRE","bt":"уходить на пенсию","a":"RETIREMENT","at":"выход на пенсию, пенсия"},{"b":"REVOLUTION","bt":"революция; оборот","a":"REVOLUTIONARY","at":"революционный; революционер"},{"b":"REVOLUTION","bt":"революция; оборот","a":"REVOLUTIONIST","at":"революционер"},{"b":"ROME","bt":"Рим","a":"ROMAN","at":"римский; римлянин"},{"b":"ROUTINE","bt":"распорядок, рутина; обычный","a":"ROUTINELY","at":"регулярно, обычно"},{"b":"RUDE","bt":"грубый","a":"RUDELY","at":"грубо"},{"b":"RUDE","bt":"грубый","a":"RUDENESS","at":"грубость"},{"b":"RUSSIA","bt":"Россия","a":"RUSSIAN","at":"русский, российский; русский (человек)","x":["RUSSIANS"]},{"b":"SAFE","bt":"безопасный; сейф","a":"SAFELY","at":"безопасно"},{"b":"SAFE","bt":"безопасный; сейф","a":"SAFETY","at":"безопасность"},{"b":"SAFE","bt":"безопасный; сейф","a":"SAVE","at":"спасать; экономить; сохранять"},{"b":"SAFE","bt":"безопасный; сейф","a":"SAVER","at":"спаситель; тот, кто экономит"},{"b":"SAFE","bt":"безопасный; сейф","a":"SAVIOUR","at":"спаситель"},{"b":"SAFE","bt":"безопасный; сейф","a":"UNSAFE","at":"небезопасный"},{"b":"SAFE","bt":"безопасный; сейф","a":"UNSAFELY","at":"небезопасно"},{"b":"SAIL","bt":"плыть, идти под парусом; парус","a":"SAILOR","at":"моряк, матрос","x":["SAILORS"]},{"b":"SCHOLAR","bt":"учёный; стипендиат","a":"SCHOLARSHIP","at":"стипендия; учёность"},{"b":"SCIENCE","bt":"наука","a":"SCIENTIFIC","at":"научный"},{"b":"SCIENCE","bt":"наука","a":"SCIENTIFICALLY","at":"научно"},{"b":"SCIENCE","bt":"наука","a":"SCIENTIST","at":"учёный","x":["SCIENTISTS"]},{"b":"SCULPT","bt":"ваять, лепить","a":"SCULPTOR","at":"скульптор"},{"b":"SEISMOLOGY","bt":"сейсмология","a":"SEISMOLOGIST","at":"сейсмолог","x":["SEISMOLOGISTS"]},{"b":"SENSITIVE","bt":"чувствительный","a":"SENSITIVITY","at":"чувствительность"},{"b":"SERVE","bt":"служить; обслуживать","a":"SERVANT","at":"слуга, служащий"},{"b":"SETTLE","bt":"поселяться; улаживать","a":"SETTLEMENT","at":"поселение; урегулирование"},{"b":"SHORT","bt":"короткий","a":"SHORTEN","at":"укорачивать, сокращать"},{"b":"SIGN","bt":"знак; подписывать","a":"SIGNATURE","at":"подпись"},{"b":"SIGNIFICANT","bt":"значительный, важный","a":"SIGNIFICANCE","at":"значимость, важность"},{"b":"SIGNIFICANT","bt":"значительный, важный","a":"SIGNIFICANTLY","at":"значительно"},{"b":"SILENT","bt":"тихий, молчаливый","a":"SILENTLY","at":"тихо, молча"},{"b":"SIMILAR","bt":"похожий, подобный","a":"SIMILARITY","at":"сходство"},{"b":"SIMILAR","bt":"похожий, подобный","a":"SIMILARLY","at":"подобным образом"},{"b":"SIMPLE","bt":"простой","a":"SIMPLY","at":"просто"},{"b":"SKI","bt":"кататься на лыжах; лыжа","a":"SKIER","at":"лыжник"},{"b":"SKI","bt":"кататься на лыжах; лыжа","a":"SKIING","at":"катание на лыжах"},{"b":"SLEEP","bt":"спать; сон","a":"SLEEPER","at":"спящий; спальный вагон","x":["SLEEPERS"]},{"b":"SPEAK","bt":"говорить","a":"SPEAKERS","at":"ораторы; колонки, динамики"},{"b":"SPECIAL","bt":"особый, специальный","a":"SPECIALIZE","at":"специализироваться","x":["SPECIALISE"]},{"b":"SPECIAL","bt":"особый, специальный","a":"SPECIALTY","at":"специальность; фирменное блюдо"},{"b":"SPICE","bt":"специя, пряность","a":"SPICY","at":"острый, пряный"},{"b":"STARVE","bt":"голодать","a":"STARVING","at":"голодающий, очень голодный"},{"b":"STATE","bt":"состояние; государство; заявлять","a":"STATEMENT","at":"заявление, утверждение"},{"b":"STICK","bt":"палка; приклеивать","a":"STICKY","at":"липкий"},{"b":"STORM","bt":"буря, шторм","a":"STORMY","at":"бурный, штормовой"},{"b":"STRENGTH","bt":"сила, прочность","a":"STRENGTHEN","at":"усиливать, укреплять"},{"b":"STRONG","bt":"сильный, крепкий","a":"STRENGTH","at":"сила, прочность"},{"b":"SUBURB","bt":"пригород","a":"SUBURBAN","at":"пригородный"},{"b":"SUCCESS","bt":"успех","a":"SUCCESSFUL","at":"успешный"},{"b":"SUIT","bt":"костюм; подходить","a":"SUITABLE","at":"подходящий"},{"b":"SURPRISE","bt":"удивление, сюрприз; удивлять","a":"SURPRISED","at":"удивлённый","x":["SURPRIZED"]},{"b":"SURPRISE","bt":"удивление, сюрприз; удивлять","a":"SURPRISING","at":"удивительный","x":["SURPRIZING"]},{"b":"SURPRISE","bt":"удивление, сюрприз; удивлять","a":"SURPRISINGLY","at":"удивительно"},{"b":"SURPRISE","bt":"удивление, сюрприз; удивлять","a":"UNSURPRISED","at":"неудивлённый","x":["UNSURPRIZED"]},{"b":"SURPRISE","bt":"удивление, сюрприз; удивлять","a":"UNSURPRISINGLY","at":"неудивительно"},{"b":"SURROUND","bt":"окружать","a":"SURROUNDING","at":"окружающий; окрестности","x":["SURROUNDINGS"]},{"b":"SWEDEN","bt":"Швеция","a":"SWEDISH","at":"шведский; шведский язык"},{"b":"SWEET","bt":"сладкий","a":"SWEETENER","at":"подсластитель"},{"b":"SWEET","bt":"сладкий","a":"SWEETLY","at":"сладко, мило"},{"b":"SWEET","bt":"сладкий","a":"SWEETNESS","at":"сладость"},{"b":"SWIM","bt":"плавать","a":"SWIMMER","at":"пловец","x":["SWIMMERS"]},{"b":"SYMBOL","bt":"символ","a":"SYMBOLIC","at":"символический"},{"b":"SYMBOL","bt":"символ","a":"SYMBOLICALLY","at":"символически"},{"b":"SYMBOL","bt":"символ","a":"SYMBOLIZE","at":"символизировать","x":["SYMBOLISE"]},{"b":"TALK","bt":"говорить, разговаривать; разговор","a":"TALKATIVE","at":"разговорчивый, болтливый"},{"b":"TECHNICAL","bt":"технический","a":"TECHNICALLY","at":"технически"},{"b":"TECHNICAL","bt":"технический","a":"TECHNICIAN","at":"техник, специалист"},{"b":"TECHNICAL","bt":"технический","a":"TECHNIQUE","at":"техника, приём, метод"},{"b":"TECHNOLOGY","bt":"технология","a":"TECHNOLOGICAL","at":"технологический"},{"b":"TECHNOLOGY","bt":"технология","a":"TECHNOLOGICALLY","at":"технологически"},{"b":"TENSE","bt":"напряжённый; время (грамм.)","a":"TENSION","at":"напряжение, напряжённость"},{"b":"TERRIBLE","bt":"ужасный","a":"TERRIBLY","at":"ужасно"},{"b":"THANKFUL","bt":"благодарный","a":"THANKFULLY","at":"к счастью; с благодарностью"},{"b":"THIRST","bt":"жажда","a":"THIRSTY","at":"испытывающий жажду"},{"b":"THOROUGH","bt":"тщательный, основательный","a":"THOROUGHLY","at":"тщательно, основательно"},{"b":"THOROUGH","bt":"тщательный, основательный","a":"THOROUGHNESS","at":"тщательность"},{"b":"TIME","bt":"время","a":"TIMETABLE","at":"расписание"},{"b":"TOUR","bt":"тур, путешествие","a":"TOURISM","at":"туризм"},{"b":"TOUR","bt":"тур, путешествие","a":"TOURIST","at":"турист","x":["TOURISTS"]},{"b":"TRAIN","bt":"поезд; тренировать(ся), обучать","a":"RETRAIN","at":"переобучать(ся)"},{"b":"TRAIN","bt":"поезд; тренировать(ся), обучать","a":"TRAINEE","at":"стажёр, практикант"},{"b":"TRAIN","bt":"поезд; тренировать(ся), обучать","a":"TRAINER","at":"тренер"},{"b":"TRAIN","bt":"поезд; тренировать(ся), обучать","a":"TRAINING","at":"обучение, тренировка"},{"b":"TRANSFORM","bt":"преобразовывать, превращать","a":"TRANSFORMATION","at":"преобразование, превращение"},{"b":"TRANSLATE","bt":"переводить","a":"TRANSLATION","at":"перевод"},{"b":"TRANSLATE","bt":"переводить","a":"TRANSLATOR","at":"переводчик"},{"b":"TREAT","bt":"обращаться; лечить; угощение","a":"TREATMENT","at":"лечение; обращение"},{"b":"TRUE","bt":"истинный, верный","a":"TRULY","at":"истинно, искренне"},{"b":"TRUE","bt":"истинный, верный","a":"UNTRUE","at":"неверный, ложный"},{"b":"TYPICAL","bt":"типичный","a":"TYPICALLY","at":"обычно, типично"},{"b":"UNIVERSE","bt":"вселенная","a":"UNIVERSAL","at":"универсальный, всеобщий"},{"b":"USE","bt":"использовать; использование","a":"USEFUL","at":"полезный"},{"b":"USE","bt":"использовать; использование","a":"USER","at":"пользователь","x":["USERS"]},{"b":"USUAL","bt":"обычный","a":"UNUSUAL","at":"необычный"},{"b":"USUAL","bt":"обычный","a":"USUALLY","at":"обычно"},{"b":"VALUE","bt":"ценность, стоимость; ценить","a":"VALUABLE","at":"ценный"},{"b":"VARY","bt":"различаться, варьироваться","a":"VARIETY","at":"разнообразие; сорт"},{"b":"VARY","bt":"различаться, варьироваться","a":"VARIOUS","at":"различные, разнообразные"},{"b":"VICTORY","bt":"победа","a":"VICTORIOUS","at":"победоносный"},{"b":"VIOLENT","bt":"жестокий, агрессивный","a":"VIOLENCE","at":"насилие, жестокость"},{"b":"VIOLIN","bt":"скрипка","a":"VIOLINIST","at":"скрипач"},{"b":"VISIBLE","bt":"видимый, заметный","a":"INVISIBLE","at":"невидимый"},{"b":"VISIT","bt":"посещать; визит","a":"VISITOR","at":"посетитель, гость","x":["VISITORS"]},{"b":"VISUAL","bt":"визуальный, зрительный","a":"VISUALISE","at":"визуализировать, представлять","x":["VISUALIZE"]},{"b":"VOLCANO","bt":"вулкан","a":"VOLCANIC","at":"вулканический"},{"b":"WAIT","bt":"ждать","a":"WAITER","at":"официант"},{"b":"WAIT","bt":"ждать","a":"WAITRESS","at":"официантка"},{"b":"WEAK","bt":"слабый","a":"WEAKNESS","at":"слабость","x":["WEAKNESSS"]},{"b":"WEAVE","bt":"ткать, плести","a":"WEAVER","at":"ткач"},{"b":"WEIGH","bt":"весить; взвешивать","a":"WEIGHT","at":"вес"},{"b":"WIDE","bt":"широкий","a":"WIDELY","at":"широко"},{"b":"WIDE","bt":"широкий","a":"WIDEN","at":"расширять(ся)"},{"b":"WIDE","bt":"широкий","a":"WIDTH","at":"ширина"},{"b":"WILL","bt":"воля; будет (вспом. глагол)","a":"UNWILLING","at":"нежелающий, неохотный"},{"b":"WILL","bt":"воля; будет (вспом. глагол)","a":"UNWILLINGNESS","at":"нежелание"},{"b":"WILL","bt":"воля; будет (вспом. глагол)","a":"WILLING","at":"готовый, охотно делающий"},{"b":"WILL","bt":"воля; будет (вспом. глагол)","a":"WILLINGNESS","at":"готовность, охота"},{"b":"WILLING","bt":"готовый, охотно делающий","a":"WILLINGLY","at":"охотно"},{"b":"WIN","bt":"выигрывать, побеждать","a":"WINNER","at":"победитель","x":["WINNERS"]},{"b":"WIND","bt":"ветер; виться, заводить","a":"WINDY","at":"ветреный"},{"b":"WONDER","bt":"чудо; удивляться, интересоваться","a":"WONDERFUL","at":"замечательный, чудесный"},{"b":"WORLD","bt":"мир","a":"WORLDWIDE","at":"всемирный, по всему миру"},{"b":"WRITE","bt":"писать","a":"REWRITE","at":"переписывать"},{"b":"WRITE","bt":"писать","a":"WRITER","at":"писатель"},{"b":"YEAR","bt":"год","a":"YEARLY","at":"ежегодный; ежегодно"}];
+
+// ---------- build items ----------
+const items = RAW_ITEMS.map(o => {
+  const a = o.a;
+  const accepts = new Set([a].concat(o.x || []));
+  return {
+    id: o.b + "|" + a, base: o.b, answer: a, accepts: accepts,
+    baseTr: o.bt || "", answerTr: o.at || "",
+    first: a[0], last: a[a.length - 1], len: a.length,
+    sig: a[0] + a[a.length - 1] + a.length
+  };
+});
+const byId = new Map(items.map(it => [it.id, it]));
+const fam = new Map();
+for (const it of items){ if(!fam.has(it.base)) fam.set(it.base, []); fam.get(it.base).push(it); }
+const ALL_IDS = items.map(it => it.id);
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const elRoot=$("root"), elMask=$("mask"), elLen=$("lenbadge"), elInput=$("answer");
+const elCheck=$("checkBtn"), elDunno=$("dunnoBtn"), elFeedback=$("feedback"), elHint=$("hint");
+const elBar=$("bar"), elDone=$("doneCount"), elTotal=$("totalCount"), elPct=$("pctLabel");
+const elC=$("stCorrect"), elW=$("stWrong"), elS=$("stStreak"), elA=$("stAcc");
+const practice=$("practice"), summary=$("summary");
+
+// ---------- state ----------
+let queue=[], missed=new Set(), counts={correct:0,wrong:0};
+let streak=0, best=0, startTime=0, sessionTotal=0;
+let state="answer", current=null, lastResult=null, advTimer=null;
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function normalize(s){ return (s||"").trim().toUpperCase().replace(/[^A-Z]/g,""); }
+function fmtTime(ms){ const s=Math.floor(ms/1000); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+
+function startSession(ids){
+  clearTimeout(advTimer);
+  queue = shuffle(ids.slice());
+  sessionTotal = queue.length;
+  missed = new Set(); counts={correct:0,wrong:0}; streak=0; best=0; startTime=Date.now();
+  summary.classList.add("hidden"); practice.classList.remove("hidden");
+  renderStats(); nextCard();
+}
+
+function nextCard(){
+  clearTimeout(advTimer);
+  if(queue.length===0){ showSummary(true); return; }
+  current = byId.get(queue[0]);
+  state="answer"; lastResult=null;
+  elInput.value=""; elInput.disabled=false; elInput.className="";
+  elFeedback.textContent=""; elFeedback.className="feedback";
+  elCheck.textContent="Проверить"; elDunno.classList.remove("hidden");
+  elHint.textContent="Enter — проверить";
+  elRoot.textContent = current.base;
+  $("rootTr").textContent = current.baseTr;
+  $("maskTr").textContent = current.answerTr;
+  renderMask(false);
+  renderProgress();
+  try{ elInput.focus(); }catch(e){}
+}
+
+function renderMask(resolved){
+  elMask.className = "mask" + (resolved ? " resolved" : "");
+  elMask.innerHTML = "";
+  const w = current.answer;
+  for(let i=0;i<current.len;i++){
+    const span=document.createElement("span");
+    span.style.setProperty("--i", i);
+    if(resolved){ span.className="slot ok"; span.textContent=w[i]; }
+    else if(i===0 || i===current.len-1){ span.className="slot"; span.textContent=w[i]; }
+    else { span.className="slot dot"; span.textContent="·"; }
+    elMask.appendChild(span);
+  }
+  elLen.textContent = current.len + " букв";
+}
+
+function renderProgress(){
+  const done = sessionTotal - queue.length;
+  const pct = sessionTotal ? Math.round(done/sessionTotal*100) : 0;
+  elBar.style.width = pct + "%";
+  elDone.textContent = done; elTotal.textContent = sessionTotal; elPct.textContent = pct + "%";
+}
+function renderStats(){
+  elC.textContent=counts.correct; elW.textContent=counts.wrong;
+  elS.textContent = streak>0 ? ("🔥 "+streak) : "0";
+  const tot=counts.correct+counts.wrong;
+  elA.textContent = tot ? Math.round(counts.correct/tot*100)+"%" : "—";
+}
+
+function check(){
+  if(state==="feedback"){ advance(); return; }
+  const norm = normalize(elInput.value);
+  if(!norm){ elInput.classList.remove("shake"); void elInput.offsetWidth; elInput.classList.add("shake"); return; }
+  let ok = current.accepts.has(norm), alt=false;
+  if(!ok){
+    for(const f of fam.get(current.base)){
+      if(f.sig===current.sig && f.accepts.has(norm)){ ok=true; alt=true; break; }
+    }
+  }
+  if(ok){
+    counts.correct++; streak++; best=Math.max(best,streak);
+    lastResult={ok:true, alt:alt};
+  } else {
+    counts.wrong++; streak=0; missed.add(current.id);
+    lastResult={ok:false, typed:elInput.value.trim()};
+  }
+  enterFeedback();
+}
+
+function dunno(){
+  if(state==="feedback"){ advance(); return; }
+  counts.wrong++; streak=0; missed.add(current.id);
+  lastResult={ok:false, revealed:true};
+  enterFeedback();
+}
+
+function enterFeedback(){
+  state="feedback";
+  elInput.disabled=true;
+  elInput.classList.remove("shake");
+  elInput.classList.add(lastResult.ok ? "ok" : "bad");
+  renderMask(true);
+  elDunno.classList.add("hidden");
+  elCheck.textContent="Дальше →";
+
+  const pron = "<button class='speak' id='speakBtn' title='Произнести' aria-label='Произнести'>🔊</button>";
+  if(lastResult.ok){
+    elFeedback.className="feedback ok";
+    elFeedback.innerHTML = (lastResult.alt ? "✓ верно <span class='sub'>— другая форма этого слова</span> " : "✓ верно ") + pron;
+    elHint.textContent="Enter / пробел — дальше";
+    advTimer = setTimeout(()=>{ if(state==="feedback") advance(); }, 1100);
+  } else if(lastResult.revealed){
+    elFeedback.className="feedback note";
+    elFeedback.innerHTML = "Правильно: <b>"+current.answer+"</b> "+pron;
+    elHint.textContent="Enter / пробел — дальше";
+  } else {
+    elFeedback.className="feedback bad";
+    const typed = lastResult.typed ? " <span class='sub'>· вы ввели</span> <s>"+escapeHtml(lastResult.typed)+"</s>" : "";
+    elFeedback.innerHTML = "✗ Правильно: <b>"+current.answer+"</b>"+typed+" "+pron;
+    elHint.textContent="Enter / пробел — дальше";
+  }
+  const sb=$("speakBtn"); if(sb) sb.addEventListener("click", e=>{ e.preventDefault(); speak(current.answer); });
+  renderStats();
+}
+
+function advance(){
+  clearTimeout(advTimer);
+  const id = queue.shift();
+  if(lastResult && !lastResult.ok) queue.push(id);   // requeue misses
+  renderProgress();
+  nextCard();
+}
+
+function speak(word){
+  try{
+    if(!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(word.toLowerCase());
+    u.lang="en-US"; u.rate=0.9;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// ---------- summary ----------
+function showSummary(finished){
+  clearTimeout(advTimer);
+  const done = sessionTotal - queue.length;
+  const tot = counts.correct+counts.wrong;
+  $("sumTitle").textContent = finished ? "Готово! 🎉" : "Итоги";
+  $("sumLead").textContent = finished
+    ? "Вы прошли все слова в этой подборке."
+    : "Промежуточный результат — можно продолжить.";
+  $("sumDone").textContent = done + " / " + sessionTotal;
+  $("sumAcc").textContent = tot ? Math.round(counts.correct/tot*100)+"%" : "—";
+  $("sumBest").textContent = best;
+  $("sumTime").textContent = fmtTime(Date.now()-startTime);
+
+  $("contBtn").style.display = (finished || queue.length===0) ? "none" : "block";
+  const rb=$("reviewBtn");
+  if(missed.size>0){ rb.style.display="block"; rb.textContent="Повторить ошибки ("+missed.size+")"; }
+  else rb.style.display="none";
+
+  practice.classList.add("hidden"); summary.classList.remove("hidden");
+}
+
+// ---------- events ----------
+elCheck.addEventListener("click", ()=> state==="answer" ? check() : advance());
+elDunno.addEventListener("click", dunno);
+elInput.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); check(); } });
+
+document.addEventListener("keydown", e=>{
+  if(!summary.classList.contains("hidden")) return;
+  if(state==="feedback" && (e.key==="Enter" || e.key===" " || e.key==="ArrowRight")){
+    e.preventDefault(); advance();
+  }
+});
+
+$("resultsBtn").addEventListener("click", ()=> showSummary(false));
+$("resetBtn").addEventListener("click", ()=>{ if(confirm("Начать заново с самого начала?")) startSession(ALL_IDS); });
+$("contBtn").addEventListener("click", ()=>{ summary.classList.add("hidden"); practice.classList.remove("hidden"); if(state==="answer"){ try{elInput.focus();}catch(e){} } });
+$("reviewBtn").addEventListener("click", ()=> startSession([...missed]));
+$("restartBtn").addEventListener("click", ()=> startSession(ALL_IDS));
+
+// ---------- go ----------
+$("restartCount").textContent = ALL_IDS.length;
+startSession(ALL_IDS);
+</script>
+</body>
+</html>
